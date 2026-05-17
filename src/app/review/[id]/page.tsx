@@ -2,7 +2,9 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import Header from '@/components/layout/Header'
 import ReviewPoller from './ReviewPoller'
-import { CheckCircle } from 'lucide-react'
+import ReviewTabs from './ReviewTabs'
+import AdvisorChat from './AdvisorChat'
+import type { VideoReview } from '@/types'
 
 export default async function ReviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -26,109 +28,55 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(1)
-    .single()
+    .maybeSingle()
+
+  const isProcessing = (video.status === 'processing' || video.status === 'uploading') && !review
 
   return (
     <div className="flex flex-col flex-1">
-      <Header title="Video Review" />
-      <main className="flex-1 p-6 flex items-center justify-center">
+      <Header title={isProcessing ? 'Analyzing…' : 'Video Review'} />
 
-        {/* Still processing — show poller that auto-triggers Gemini */}
-        {(video.status === 'processing' || video.status === 'uploading') && !review && (
-          <ReviewPoller videoId={video.id} videoName={video.video_name} />
+      <main className="flex-1 p-4 md:p-6">
+        {/* Processing — auto-triggers Gemini */}
+        {isProcessing && (
+          <div className="flex items-center justify-center min-h-[400px]">
+            <ReviewPoller videoId={video.id} videoName={video.video_name} />
+          </div>
         )}
 
-        {/* Review complete — show results (Phase 4 will replace this) */}
+        {/* Complete — full tabbed review */}
         {video.status === 'complete' && review && (
-          <div className="w-full max-w-xl">
-            <div className="flex items-center gap-3 mb-6">
-              <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
-              <div>
-                <p className="text-white font-semibold">{video.video_name}</p>
-                <p className="text-zinc-500 text-xs mt-0.5">Review complete</p>
-              </div>
+          <div className="max-w-2xl mx-auto space-y-6">
+            {/* Video name breadcrumb */}
+            <div>
+              <p className="text-zinc-500 text-xs mb-0.5">Review for</p>
+              <h2 className="text-white font-semibold text-base truncate">{video.video_name}</h2>
             </div>
 
-            {/* Score card */}
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 mb-4">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-zinc-400 text-sm font-medium">Overall Score</span>
-                <span className="text-3xl font-bold text-white">{review.overall_score}<span className="text-zinc-500 text-base font-normal">/100</span></span>
-              </div>
-              <div className="w-full bg-zinc-800 rounded-full h-2">
-                <div
-                  className="bg-violet-500 h-2 rounded-full transition-all"
-                  style={{ width: `${review.overall_score}%` }}
-                />
-              </div>
+            <ReviewTabs
+              review={review as VideoReview}
+              videoId={video.id}
+              videoName={video.video_name}
+            />
+
+            {/* Advisor section below tabs */}
+            <div>
+              <h3 className="text-white font-semibold text-sm mb-3">Advisor Chat</h3>
+              <AdvisorChat videoId={video.id} />
             </div>
-
-            {/* Summary */}
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 mb-4">
-              <p className="text-zinc-400 text-xs font-medium uppercase tracking-wide mb-2">Summary</p>
-              <p className="text-white text-sm leading-relaxed">{review.summary}</p>
-            </div>
-
-            {/* Quick scores */}
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <ScoreCard label="Thumb-Stop" score={review.thumb_stop_score} />
-              <ScoreCard label="Watch-Through" score={review.watch_through_score} />
-            </div>
-
-            {/* What works */}
-            {review.what_works && (
-              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 mb-3">
-                <p className="text-zinc-400 text-xs font-medium uppercase tracking-wide mb-2">What Works</p>
-                <p className="text-white text-sm leading-relaxed">{review.what_works}</p>
-              </div>
-            )}
-
-            {/* Suggested hook */}
-            {review.suggested_hook && (
-              <div className="bg-violet-500/5 border border-violet-500/20 rounded-2xl p-5 mb-3">
-                <p className="text-violet-400 text-xs font-medium uppercase tracking-wide mb-2">Suggested Hook</p>
-                <p className="text-white text-sm leading-relaxed italic">&ldquo;{review.suggested_hook}&rdquo;</p>
-              </div>
-            )}
-
-            {/* Suggested caption */}
-            {review.suggested_caption && (
-              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
-                <p className="text-zinc-400 text-xs font-medium uppercase tracking-wide mb-2">Suggested Caption</p>
-                <p className="text-zinc-300 text-sm leading-relaxed">{review.suggested_caption}</p>
-              </div>
-            )}
-
-            <p className="text-zinc-600 text-xs text-center mt-5">
-              Full tabbed review UI coming in Phase 4
-            </p>
           </div>
         )}
 
         {/* Error */}
         {video.status === 'error' && (
-          <div className="text-center">
-            <p className="text-red-400 font-medium">Something went wrong with this video.</p>
-            <p className="text-zinc-500 text-sm mt-1">Try uploading again.</p>
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <p className="text-red-400 font-medium mb-1">Analysis failed</p>
+              <p className="text-zinc-500 text-sm">Try uploading the video again.</p>
+            </div>
           </div>
         )}
       </main>
-    </div>
-  )
-}
-
-function ScoreCard({ label, score }: { label: string; score: number | null }) {
-  const color = !score ? 'text-zinc-400'
-    : score >= 70 ? 'text-green-400'
-    : score >= 45 ? 'text-yellow-400'
-    : 'text-red-400'
-
-  return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-      <p className="text-zinc-500 text-xs mb-1">{label}</p>
-      <p className={`text-2xl font-bold ${color}`}>
-        {score ?? '—'}<span className="text-zinc-600 text-sm font-normal">/100</span>
-      </p>
     </div>
   )
 }

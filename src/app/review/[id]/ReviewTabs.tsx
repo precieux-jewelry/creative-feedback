@@ -89,8 +89,8 @@ export default function ReviewTabs({
           {review.hook_analysis && (
             <Section label="Opening Hook">{review.hook_analysis}</Section>
           )}
-          {review.clarity_of_idea && (
-            <Section label="Clarity of Idea">{(review.raw_analysis as Record<string,string>)?.clarity_of_idea}</Section>
+          {(review.raw_analysis as Record<string,string>)?.clarity_of_idea && (
+            <Section label="Clarity of Idea">{(review.raw_analysis as Record<string,string>).clarity_of_idea}</Section>
           )}
         </div>
       )}

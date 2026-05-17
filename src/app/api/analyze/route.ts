@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { getGeminiClient, ANALYSIS_PROMPT } from '@/lib/gemini'
+import { sendReviewReadyEmail } from '@/lib/resend'
 import { FileState } from '@google/genai'
 import { NextResponse } from 'next/server'
 
@@ -135,6 +136,14 @@ export async function POST(request: Request) {
 
     // 8. Clean up file from Gemini (fire and forget)
     ai.files.delete({ name: uploadedFile.name! }).catch(() => {})
+
+    // 9. Send email notification (fire and forget)
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+    sendReviewReadyEmail({
+      to: user.email!,
+      videoName: video.video_name,
+      reviewUrl: `${appUrl}/review/${videoId}`,
+    }).catch(() => {})
 
     return NextResponse.json({ success: true, reviewId: review.id })
   } catch (err) {
