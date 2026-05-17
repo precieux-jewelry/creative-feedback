@@ -37,5 +37,56 @@ Evaluate the video across every dimension and return ONLY valid JSON matching th
   "what_to_improve": "<specific actionable improvements with examples>",
   "suggested_hook": "<write a stronger opening hook or first line for this video>",
   "suggested_caption": "<write an optimized caption for Instagram/TikTok>",
-  "suggested_title": "<write a stronger on-screen title or text overlay>"
+  "suggested_title": "<write a stronger on-screen title or text overlay>",
+
+  "forecast": {
+    "instagram": {
+      "views_low": <conservative view estimate as integer>,
+      "views_high": <optimistic view estimate as integer>,
+      "likes_low": <integer>,
+      "likes_high": <integer>,
+      "comments_low": <integer>,
+      "comments_high": <integer>,
+      "shares_low": <integer>,
+      "shares_high": <integer>,
+      "saves_low": <integer>,
+      "saves_high": <integer>,
+      "watch_through_pct": <predicted avg watch-through % as integer 0-100>,
+      "virality": "<low | medium | high>",
+      "confidence": "<low | medium | high>",
+      "reasoning": "<2-3 sentences explaining the forecast based on the video's content, hook strength, and niche>"
+    },
+    "tiktok": {
+      "views_low": <integer>,
+      "views_high": <integer>,
+      "likes_low": <integer>,
+      "likes_high": <integer>,
+      "comments_low": <integer>,
+      "comments_high": <integer>,
+      "shares_low": <integer>,
+      "shares_high": <integer>,
+      "saves_low": <integer>,
+      "saves_high": <integer>,
+      "watch_through_pct": <integer 0-100>,
+      "virality": "<low | medium | high>",
+      "confidence": "<low | medium | high>",
+      "reasoning": "<2-3 sentences>"
+    },
+    "youtube_shorts": {
+      "views_low": <integer>,
+      "views_high": <integer>,
+      "likes_low": <integer>,
+      "likes_high": <integer>,
+      "comments_low": <integer>,
+      "comments_high": <integer>,
+      "shares_low": <integer>,
+      "shares_high": <integer>,
+      "saves_low": <integer>,
+      "saves_high": <integer>,
+      "watch_through_pct": <integer 0-100>,
+      "virality": "<low | medium | high>",
+      "confidence": "<low | medium | high>",
+      "reasoning": "<2-3 sentences>"
+    }
+  }
 }`

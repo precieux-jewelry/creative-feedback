@@ -49,6 +49,31 @@ export interface VideoReview {
   suggested_title: string | null
   // Raw Gemini output
   raw_analysis: Record<string, unknown> | null
+  // Platform forecast
+  forecast: PlatformForecast | null
+}
+
+export interface ForecastPlatform {
+  views_low: number
+  views_high: number
+  likes_low: number
+  likes_high: number
+  comments_low: number
+  comments_high: number
+  shares_low: number
+  shares_high: number
+  saves_low: number
+  saves_high: number
+  watch_through_pct: number
+  virality: 'low' | 'medium' | 'high'
+  confidence: 'low' | 'medium' | 'high'
+  reasoning: string
+}
+
+export interface PlatformForecast {
+  instagram: ForecastPlatform
+  tiktok: ForecastPlatform
+  youtube_shorts: ForecastPlatform
 }
 
 export interface PersonaMessage {

@@ -125,6 +125,7 @@ export async function POST(request: Request) {
         suggested_caption: analysis.suggested_caption,
         suggested_title: analysis.suggested_title,
         raw_analysis: analysis,
+        forecast: analysis.forecast ?? null,
       })
       .select()
       .single()

@@ -2,13 +2,121 @@
 
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
-import type { VideoReview } from '@/types'
+import type { VideoReview, ForecastPlatform } from '@/types'
 import ScoreRing from '@/components/ui/ScoreRing'
 import PersonaChat from './PersonaChat'
 import AdvisorChat from './AdvisorChat'
 
-const TABS = ['Overview', 'Creative', 'Analytics', 'Persona Chat', 'Recommendations'] as const
+const TABS = ['Overview', 'Creative', 'Analytics', 'Forecast', 'Persona Chat', 'Recommendations'] as const
 type Tab = typeof TABS[number]
+
+const PLATFORM_META = {
+  instagram: { label: 'Instagram Reels', color: 'from-pink-500 to-orange-400', icon: '📸' },
+  tiktok: { label: 'TikTok', color: 'from-cyan-400 to-blue-500', icon: '🎵' },
+  youtube_shorts: { label: 'YouTube Shorts', color: 'from-red-500 to-red-600', icon: '▶️' },
+} as const
+
+function fmt(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
+  return String(n)
+}
+
+function ViralityBadge({ level }: { level: 'low' | 'medium' | 'high' }) {
+  const map = {
+    low: 'bg-zinc-700 text-zinc-300',
+    medium: 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30',
+    high: 'bg-green-500/20 text-green-400 border border-green-500/30',
+  }
+  return (
+    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide ${map[level]}`}>
+      {level} virality
+    </span>
+  )
+}
+
+function MetricPair({ label, low, high }: { label: string; low: number; high: number }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-zinc-500 text-[10px] uppercase tracking-wide">{label}</span>
+      <span className="text-white font-semibold text-sm">{fmt(low)}–{fmt(high)}</span>
+    </div>
+  )
+}
+
+function PlatformCard({ platform, data }: { platform: keyof typeof PLATFORM_META; data: ForecastPlatform }) {
+  const meta = PLATFORM_META[platform]
+  return (
+    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden mb-3">
+      {/* Header */}
+      <div className={`bg-gradient-to-r ${meta.color} px-5 py-3 flex items-center justify-between`}>
+        <div className="flex items-center gap-2">
+          <span className="text-lg">{meta.icon}</span>
+          <span className="text-white font-semibold text-sm">{meta.label}</span>
+        </div>
+        <ViralityBadge level={data.virality} />
+      </div>
+
+      {/* Views hero */}
+      <div className="px-5 pt-4 pb-2">
+        <p className="text-zinc-500 text-[10px] uppercase tracking-wide mb-0.5">Projected Views</p>
+        <p className="text-white text-2xl font-bold">{fmt(data.views_low)}–{fmt(data.views_high)}</p>
+      </div>
+
+      {/* Watch-through bar */}
+      <div className="px-5 pb-4">
+        <div className="flex justify-between items-center mb-1">
+          <span className="text-zinc-500 text-[10px] uppercase tracking-wide">Avg Watch-Through</span>
+          <span className="text-zinc-300 text-xs font-semibold">{data.watch_through_pct}%</span>
+        </div>
+        <div className="w-full bg-zinc-800 rounded-full h-1.5">
+          <div
+            className={`h-1.5 rounded-full bg-gradient-to-r ${meta.color}`}
+            style={{ width: `${data.watch_through_pct}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Metrics grid */}
+      <div className="grid grid-cols-2 gap-3 px-5 pb-4 border-t border-zinc-800 pt-4">
+        <MetricPair label="Likes" low={data.likes_low} high={data.likes_high} />
+        <MetricPair label="Comments" low={data.comments_low} high={data.comments_high} />
+        <MetricPair label="Shares" low={data.shares_low} high={data.shares_high} />
+        <MetricPair label="Saves" low={data.saves_low} high={data.saves_high} />
+      </div>
+
+      {/* Reasoning */}
+      <div className="px-5 pb-5 border-t border-zinc-800 pt-3">
+        <p className="text-zinc-500 text-[10px] uppercase tracking-wide mb-1">
+          Why — {data.confidence} confidence
+        </p>
+        <p className="text-zinc-400 text-xs leading-relaxed">{data.reasoning}</p>
+      </div>
+    </div>
+  )
+}
+
+function ForecastTab({ forecast }: { forecast: VideoReview['forecast'] }) {
+  if (!forecast) {
+    return (
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center">
+        <p className="text-zinc-500 text-sm">Forecast not available — re-analyze this video to generate predictions.</p>
+      </div>
+    )
+  }
+  return (
+    <div>
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 mb-4">
+        <p className="text-zinc-400 text-xs leading-relaxed">
+          AI-powered performance forecast based on the video's hook strength, pacing, shareability, and content signals. Ranges reflect typical account sizes (1K–50K followers). Connect real analytics to improve accuracy over time.
+        </p>
+      </div>
+      <PlatformCard platform="tiktok" data={forecast.tiktok} />
+      <PlatformCard platform="instagram" data={forecast.instagram} />
+      <PlatformCard platform="youtube_shorts" data={forecast.youtube_shorts} />
+    </div>
+  )
+}
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -129,6 +237,11 @@ export default function ReviewTabs({
             <Section label="CTA Strength">{(review.raw_analysis as Record<string,string>).cta_strength}</Section>
           )}
         </div>
+      )}
+
+      {/* Forecast */}
+      {tab === 'Forecast' && (
+        <ForecastTab forecast={review.forecast} />
       )}
 
       {/* Persona Chat */}
