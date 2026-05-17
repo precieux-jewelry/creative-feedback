@@ -19,7 +19,7 @@ export async function sendReviewReadyEmail({
   if (!resend) return // Resend not configured yet — skip silently
 
   await resend.emails.send({
-    from: 'Creative Feedback <noreply@creativefeedback.app>',
+    from: 'Creative Feedback <onboarding@resend.dev>',
     to,
     subject: `Your video review is ready — ${videoName}`,
     html: `
