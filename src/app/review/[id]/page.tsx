@@ -1,5 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect, notFound } from 'next/navigation'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { notFound } from 'next/navigation'
 import Header from '@/components/layout/Header'
 import ReviewPoller from './ReviewPoller'
 import ReviewTabs from './ReviewTabs'
@@ -8,15 +8,12 @@ import type { VideoReview } from '@/types'
 
 export default async function ReviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
+  const supabase = createAdminClient()
 
   const { data: video } = await supabase
     .from('videos')
     .select('*')
     .eq('id', id)
-    .eq('user_id', user.id)
     .single()
 
   if (!video) notFound()
@@ -25,7 +22,6 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
     .from('video_reviews')
     .select('*')
     .eq('video_id', id)
-    .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()

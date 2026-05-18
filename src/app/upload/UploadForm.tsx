@@ -47,10 +47,8 @@ export default function UploadForm() {
     setProgress(0)
 
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setError('Not authenticated.'); setState('error'); return }
 
-    const storagePath = `${user.id}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
+    const storagePath = `uploads/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
 
     // Animate progress to 90% while upload runs
     const progressInterval = setInterval(() => {
@@ -72,17 +70,16 @@ export default function UploadForm() {
     setProgress(95)
     setState('saving')
 
-    // 7-day signed URL for playback
-    const { data: urlData } = await supabase.storage
+    // Public URL (bucket is public)
+    const { data: urlData } = supabase.storage
       .from('videos')
-      .createSignedUrl(storagePath, 60 * 60 * 24 * 7)
+      .getPublicUrl(storagePath)
 
-    const videoUrl = urlData?.signedUrl ?? storageData.path
+    const videoUrl = urlData.publicUrl
 
     const { data: videoRecord, error: dbError } = await supabase
       .from('videos')
       .insert({
-        user_id: user.id,
         video_url: videoUrl,
         video_name: file.name,
         file_size: file.size,

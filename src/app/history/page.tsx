@@ -1,19 +1,15 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { createAdminClient } from '@/lib/supabase/admin'
 import Header from '@/components/layout/Header'
 import Link from 'next/link'
 import { Video, History, ArrowRight } from 'lucide-react'
 import { formatDate, formatFileSize } from '@/lib/utils'
 
 export default async function HistoryPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
+  const supabase = createAdminClient()
 
   const { data: videos } = await supabase
     .from('videos')
     .select('*')
-    .eq('user_id', user.id)
     .order('upload_date', { ascending: false })
 
   return (

@@ -3,14 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import {
-  LayoutDashboard,
-  Upload,
-  History,
-  LogOut,
-  Clapperboard,
-} from 'lucide-react'
-import { signOut } from '@/app/auth/actions'
+import { LayoutDashboard, Upload, History, Clapperboard } from 'lucide-react'
 
 const nav = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -52,18 +45,6 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* Sign out */}
-      <div className="px-3 py-4 border-t border-zinc-800">
-        <form action={signOut}>
-          <button
-            type="submit"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-zinc-400 hover:text-white hover:bg-zinc-800 transition w-full"
-          >
-            <LogOut className="w-4 h-4 flex-shrink-0" />
-            Sign out
-          </button>
-        </form>
-      </div>
     </aside>
   )
 }

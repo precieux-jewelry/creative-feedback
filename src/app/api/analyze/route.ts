@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { getGeminiClient, ANALYSIS_PROMPT } from '@/lib/gemini'
 import { sendReviewReadyEmail } from '@/lib/resend'
 import { FileState } from '@google/genai'
@@ -8,19 +8,15 @@ import { NextResponse } from 'next/server'
 export const maxDuration = 300
 
 export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const supabase = createAdminClient()
 
   const { videoId } = await request.json()
   if (!videoId) return NextResponse.json({ error: 'videoId is required' }, { status: 400 })
 
-  // Fetch video record — enforce ownership
   const { data: video, error: videoError } = await supabase
     .from('videos')
     .select('*')
     .eq('id', videoId)
-    .eq('user_id', user.id)
     .single()
 
   if (videoError || !video) {
@@ -105,7 +101,6 @@ export async function POST(request: Request) {
       .from('video_reviews')
       .insert({
         video_id: videoId,
-        user_id: user.id,
         overall_score: analysis.overall_score,
         summary: analysis.summary,
         hook_analysis: analysis.hook_analysis,
@@ -140,11 +135,14 @@ export async function POST(request: Request) {
 
     // 9. Send email notification (fire and forget)
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
-    sendReviewReadyEmail({
-      to: user.email!,
-      videoName: video.video_name,
-      reviewUrl: `${appUrl}/review/${videoId}`,
-    }).catch(() => {})
+    const notifyEmail = process.env.NOTIFY_EMAIL
+    if (notifyEmail) {
+      sendReviewReadyEmail({
+        to: notifyEmail,
+        videoName: video.video_name,
+        reviewUrl: `${appUrl}/review/${videoId}`,
+      }).catch(() => {})
+    }
 
     return NextResponse.json({ success: true, reviewId: review.id })
   } catch (err) {

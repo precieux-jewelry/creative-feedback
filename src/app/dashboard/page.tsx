@@ -1,19 +1,15 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { createAdminClient } from '@/lib/supabase/admin'
 import Header from '@/components/layout/Header'
 import Link from 'next/link'
 import { Upload, Video, Sparkles, ArrowRight, Clock, CheckCircle, AlertCircle } from 'lucide-react'
 import { formatDate, formatFileSize } from '@/lib/utils'
 
 export default async function DashboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
+  const supabase = createAdminClient()
 
   const { data: videos } = await supabase
     .from('videos')
     .select('*')
-    .eq('user_id', user.id)
     .order('upload_date', { ascending: false })
     .limit(5)
 
@@ -21,7 +17,7 @@ export default async function DashboardPage() {
   const totalVideos = allVideos.length
   const completedReviews = allVideos.filter((v) => v.status === 'complete').length
 
-  const name = (user.user_metadata?.full_name as string)?.split(' ')[0] || 'Creator'
+  const name = 'Creator'
 
   return (
     <div className="flex flex-col flex-1">

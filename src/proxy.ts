@@ -33,24 +33,8 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  const { pathname } = request.nextUrl
-
-  // Redirect unauthenticated users away from protected routes
-  const protectedRoutes = ['/dashboard', '/upload', '/review', '/history']
-  const isProtected = protectedRoutes.some((r) => pathname.startsWith(r))
-
-  if (isProtected && !user) {
-    return NextResponse.redirect(new URL('/auth/login', request.url))
-  }
-
-  // Redirect authenticated users away from auth pages
-  if (user && pathname.startsWith('/auth') && pathname !== '/auth/callback') {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
-  }
+  // Refresh session if present — no auth gates
+  await supabase.auth.getUser()
 
   return supabaseResponse
 }

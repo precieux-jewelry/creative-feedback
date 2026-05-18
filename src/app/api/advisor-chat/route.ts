@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { getGeminiClient } from '@/lib/gemini'
 import { NextResponse } from 'next/server'
 
@@ -9,22 +9,17 @@ const SYSTEM_PROMPTS = {
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+  const supabase = createAdminClient()
   const { videoId, advisorType, question, history = [] } = await request.json()
 
   if (!['creative', 'performance'].includes(advisorType)) {
     return NextResponse.json({ error: 'Invalid advisor type' }, { status: 400 })
   }
 
-  // Load review for context
   const { data: review } = await supabase
     .from('video_reviews')
     .select('raw_analysis')
     .eq('video_id', videoId)
-    .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(1)
     .single()
@@ -52,8 +47,8 @@ export async function POST(request: Request) {
 
   // Save to DB
   await supabase.from('advisor_messages').insert([
-    { video_id: videoId, user_id: user.id, advisor_type: advisorType, role: 'user', content: question },
-    { video_id: videoId, user_id: user.id, advisor_type: advisorType, role: 'advisor', content: reply },
+    { video_id: videoId, advisor_type: advisorType, role: 'user', content: question },
+    { video_id: videoId, advisor_type: advisorType, role: 'advisor', content: reply },
   ])
 
   return NextResponse.json({ reply })

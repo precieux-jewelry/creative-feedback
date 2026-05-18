@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { getGeminiClient } from '@/lib/gemini'
 import { NextResponse } from 'next/server'
 
@@ -7,18 +7,13 @@ const PERSONA_SYSTEM = `You are Mia, a 27-year-old woman living in New York City
 You've just watched a short-form video. Answer questions about it honestly from your personal perspective as a viewer. Be natural, conversational, and specific. Use "I" statements. Keep answers to 2-4 sentences. Don't be overly positive — if something bored you, say so. If something caught your attention, explain exactly what it was.`
 
 export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+  const supabase = createAdminClient()
   const { videoId, question, history = [] } = await request.json()
 
-  // Load the video review for context
   const { data: review } = await supabase
     .from('video_reviews')
     .select('raw_analysis, summary, hook_analysis, storytelling, emotional_pull')
     .eq('video_id', videoId)
-    .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(1)
     .single()
@@ -48,8 +43,8 @@ export async function POST(request: Request) {
 
   // Save to DB
   await supabase.from('persona_messages').insert([
-    { video_id: videoId, user_id: user.id, role: 'user', content: question },
-    { video_id: videoId, user_id: user.id, role: 'persona', content: reply },
+    { video_id: videoId, role: 'user', content: question },
+    { video_id: videoId, role: 'persona', content: reply },
   ])
 
   return NextResponse.json({ reply })
