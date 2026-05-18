@@ -9,6 +9,7 @@ export default function ReviewPoller({ videoId, videoName }: { videoId: string; 
   const router = useRouter()
   const [status, setStatus] = useState<'triggering' | 'analyzing' | 'error'>('triggering')
   const [error, setError] = useState<string | null>(null)
+  const [retryKey, setRetryKey] = useState(0)
 
   useEffect(() => {
     let pollInterval: ReturnType<typeof setInterval>
@@ -56,7 +57,7 @@ export default function ReviewPoller({ videoId, videoName }: { videoId: string; 
     }, 3000)
 
     return () => clearInterval(pollInterval)
-  }, [videoId, router])
+  }, [videoId, router, retryKey])
 
   if (status === 'error') {
     return (
@@ -67,10 +68,10 @@ export default function ReviewPoller({ videoId, videoName }: { videoId: string; 
         <h2 className="text-white font-semibold text-lg mb-2">Analysis failed</h2>
         <p className="text-red-400 text-sm mb-4">{error}</p>
         <button
-          onClick={() => { setError(null); setStatus('triggering') }}
-          className="text-violet-400 hover:text-violet-300 text-sm transition"
+          onClick={() => { setError(null); setStatus('triggering'); setRetryKey(k => k + 1) }}
+          className="mt-2 px-4 py-2 bg-violet-500 hover:bg-violet-600 text-white text-sm font-medium rounded-lg transition"
         >
-          Try again
+          Retry Analysis
         </button>
       </div>
     )

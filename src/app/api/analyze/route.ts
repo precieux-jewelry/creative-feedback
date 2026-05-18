@@ -148,8 +148,20 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, reviewId: review.id })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Analysis failed'
-    console.error('[analyze]', message)
+    const raw = err instanceof Error ? err.message : String(err)
+
+    let message = 'Analysis failed. Please try again.'
+    if (raw.includes('RESOURCE_EXHAUSTED') || raw.includes('429') || raw.includes('quota')) {
+      message = 'Gemini API quota exceeded. Please wait a minute and try again, or enable billing at ai.google.dev.'
+    } else if (raw.includes('INVALID_ARGUMENT')) {
+      message = 'The video format could not be processed. Try re-exporting as MP4.'
+    } else if (raw.includes('DEADLINE_EXCEEDED') || raw.includes('timeout')) {
+      message = 'Analysis timed out — the video may be too long. Try a shorter clip.'
+    } else if (raw.includes('Unauthorized') || raw.includes('401')) {
+      message = 'Authentication error. Please refresh and try again.'
+    }
+
+    console.error('[analyze]', raw)
 
     await supabase.from('videos').update({ status: 'error' }).eq('id', videoId)
 

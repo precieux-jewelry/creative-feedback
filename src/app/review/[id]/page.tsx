@@ -67,13 +67,10 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
           </div>
         )}
 
-        {/* Error */}
-        {video.status === 'error' && (
+        {/* Error — show poller again so user can retry without re-uploading */}
+        {video.status === 'error' && !review && (
           <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <p className="text-red-400 font-medium mb-1">Analysis failed</p>
-              <p className="text-zinc-500 text-sm">Try uploading the video again.</p>
-            </div>
+            <ReviewPoller videoId={video.id} videoName={video.video_name} />
           </div>
         )}
       </main>
