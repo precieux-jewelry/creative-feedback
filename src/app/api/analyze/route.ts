@@ -75,7 +75,7 @@ export async function POST(request: Request) {
 
     // 5. Run Gemini analysis with fileData reference
     const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-2.5-flash',
       contents: [
         {
           role: 'user',
