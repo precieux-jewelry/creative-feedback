@@ -1,46 +1,26 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
-export async function signUp(formData: FormData) {
-  const supabase = await createClient()
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
-  const fullName = formData.get('full_name') as string
-
-  const { error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: { full_name: fullName },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
-    },
-  })
-
-  if (error) {
-    return { error: error.message }
-  }
-
-  return { success: 'Check your email to confirm your account.' }
-}
+const PASSWORD = '0000'
+const COOKIE_NAME = 'cf_auth'
 
 export async function signIn(formData: FormData) {
-  const supabase = await createClient()
-  const email = formData.get('email') as string
   const password = formData.get('password') as string
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password })
-
-  if (error) {
-    return { error: error.message }
+  if (password !== PASSWORD) {
+    return { error: 'Incorrect password.' }
   }
 
-  redirect('/dashboard')
-}
+  const cookieStore = await cookies()
+  cookieStore.set(COOKIE_NAME, '1', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 60 * 60 * 24 * 30, // 30 days
+    path: '/',
+  })
 
-export async function signOut() {
-  const supabase = await createClient()
-  await supabase.auth.signOut()
-  redirect('/auth/login')
+  redirect('/dashboard')
 }

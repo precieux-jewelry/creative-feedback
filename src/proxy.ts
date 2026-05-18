@@ -1,42 +1,24 @@
-import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function proxy(request: NextRequest) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const COOKIE_NAME = 'cf_auth'
+const PUBLIC_PATHS = ['/auth/login', '/auth/callback']
 
-  // Pass through if env vars aren't configured yet
-  if (!supabaseUrl?.startsWith('http') || !supabaseKey) {
+export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // Allow public paths through
+  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
     return NextResponse.next({ request })
   }
 
-  let supabaseResponse = NextResponse.next({ request })
+  // Gate everything else on the auth cookie
+  if (!request.cookies.get(COOKIE_NAME)?.value) {
+    const loginUrl = request.nextUrl.clone()
+    loginUrl.pathname = '/auth/login'
+    return NextResponse.redirect(loginUrl)
+  }
 
-  const supabase = createServerClient(
-    supabaseUrl,
-    supabaseKey,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          )
-          supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
-
-  // Refresh session if present — no auth gates
-  await supabase.auth.getUser()
-
-  return supabaseResponse
+  return NextResponse.next({ request })
 }
 
 export const config = {
