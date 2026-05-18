@@ -146,7 +146,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, reviewId: review.id })
   } catch (err) {
-    const raw = err instanceof Error ? err.message : String(err)
+    const raw = err instanceof Error ? err.message : JSON.stringify(err)
 
     let message = 'Analysis failed. Please try again.'
     if (raw.includes('RESOURCE_EXHAUSTED') || raw.includes('429') || raw.includes('quota')) {
@@ -155,11 +155,14 @@ export async function POST(request: Request) {
       message = 'The video format could not be processed. Try re-exporting as MP4.'
     } else if (raw.includes('DEADLINE_EXCEEDED') || raw.includes('timeout')) {
       message = 'Analysis timed out — the video may be too long. Try a shorter clip.'
-    } else if (raw.includes('Unauthorized') || raw.includes('401')) {
-      message = 'Authentication error. Please refresh and try again.'
+    } else if (raw.includes('Unauthorized') || raw.includes('401') || raw.includes('403')) {
+      message = 'Gemini API key error. Check that billing is enabled on the correct project.'
+    } else if (raw.includes('API_KEY_INVALID') || raw.includes('API key')) {
+      message = 'Invalid Gemini API key. Check your GEMINI_API_KEY environment variable.'
     }
 
-    console.error('[analyze]', raw)
+    console.error('[analyze] raw:', raw)
+    console.error('[analyze] err object:', JSON.stringify(err, Object.getOwnPropertyNames(err as object)))
 
     await supabase.from('videos').update({ status: 'error' }).eq('id', videoId)
 
