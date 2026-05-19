@@ -3,6 +3,7 @@ import Header from '@/components/layout/Header'
 import Link from 'next/link'
 import { Upload, Video, Sparkles, ArrowRight, Clock, CheckCircle, AlertCircle } from 'lucide-react'
 import { formatDate, formatFileSize } from '@/lib/utils'
+import DeleteVideoButton from '@/components/DeleteVideoButton'
 
 export default async function DashboardPage() {
   const supabase = createAdminClient()
@@ -101,6 +102,7 @@ export default async function DashboardPage() {
                     </p>
                   </div>
                   <StatusBadge status={video.status} />
+                  <DeleteVideoButton videoId={video.id} />
                 </Link>
               ))}
             </div>

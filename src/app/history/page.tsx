@@ -3,6 +3,7 @@ import Header from '@/components/layout/Header'
 import Link from 'next/link'
 import { Video, History, ArrowRight } from 'lucide-react'
 import { formatDate, formatFileSize } from '@/lib/utils'
+import DeleteVideoButton from '@/components/DeleteVideoButton'
 
 export default async function HistoryPage() {
   const supabase = createAdminClient()
@@ -59,8 +60,9 @@ export default async function HistoryPage() {
                     {video.file_size ? ` · ${formatFileSize(video.file_size)}` : ''}
                   </p>
                 </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <StatusBadge status={video.status} />
+                  <DeleteVideoButton videoId={video.id} />
                   <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition" />
                 </div>
               </Link>
